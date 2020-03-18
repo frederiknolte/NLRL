@@ -113,8 +113,8 @@ class Atom(object):
     def match_variable(self, target):
         '''
         :param target: ground atom to be matched
-        :return: dictionary from int to string, indicating the map from variable to constant. return empty dictionary if
-        the two cannot match.
+        :return: dictionary from int to string, indicating the map from variable to constant. return empty
+        dictionary if the two cannot match.
         '''
         assert self.predicate == target.predicate, str(self.predicate)+" and "+str(target.predicate)+" can not match"
         match = {}

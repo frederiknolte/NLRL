@@ -3,6 +3,7 @@ from core.clause import *
 from core.ilp import LanguageFrame
 import copy
 from random import choice, random
+import numpy as np
 
 
 class SymbolicEnvironment(object):

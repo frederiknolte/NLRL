@@ -4,26 +4,29 @@ from collections import namedtuple
 
 Predicate = namedtuple("Predicate", "name arity")
 
+
 def is_variable(term):
     return isinstance(term, int)
 
+
 def var_string(atom):
-    '''
+    """
     find all variable string (string with first letter capitalized)
     :param atom: atom where variables not replaced with integers
     :return: set of variables string
-    '''
+    """
     vars = set()
     for term in atom.terms:
         if term[0].isupper():
             vars.add(term)
     return vars
 
+
 def str2atom(s):
-    '''
-    :param s: 
+    """
+    :param s:
     :return: Atom where variables not replaced with integers
-    '''
+    """
     s = s.replace(" ", "")
     left = s.find("(")
     right = s.find(")")
@@ -31,36 +34,37 @@ def str2atom(s):
     predicate = Predicate(s[:left], len(terms))
     return Atom(predicate, terms)
 
+
 def str2clause(s):
     """
-    :param s: 
-    :return: 
+    :param s:
+    :return:
     """
     s = s.replace(" ", "").replace(".", "")
     atoms = s.split(":-")
     head_str = atoms[0]
     head = str2atom(head_str)
-    if len(atoms) ==2:
+    if len(atoms) == 2:
         body_strs = atoms[1].replace("),", ") ").split(" ")
         body = [str2atom(s) for s in body_strs]
         clause = Clause(head, body)
         var_strs = set()
-        for atom in body+[head]:
+        for atom in body + [head]:
             print(atom)
-        for strs in [var_string(atom) for atom in body+[head]]:
+        for strs in [var_string(atom) for atom in body + [head]]:
             var_strs = var_strs.union(strs)
-        return clause.replace_by_dict({s: i for i,s in enumerate(var_strs)})
+        return clause.replace_by_dict({s: i for i, s in enumerate(var_strs)})
     else:
         return Clause(head, [])
 
 
 class Atom(object):
     def __init__(self, predicate, terms):
-        '''
+        """
         :param predicate: Predicate, the predicate of the atom
         :param terms: tuple of string (or integer) of size 1 or 2.
         use integer 0, 1, 2 as variables
-        '''
+        """
         object.__init__(self)
         self.predicate = predicate
         self.terms = tuple(terms)
@@ -93,7 +97,7 @@ class Atom(object):
                 terms_str += term
             terms_str += ","
         terms_str = terms_str[:-1]
-        return self.predicate.name+"("+terms_str+")"
+        return self.predicate.name + "(" + terms_str + ")"
 
     @property
     def variables(self):
@@ -102,7 +106,7 @@ class Atom(object):
 
     @property
     def variable_positions(self):
-        pos = [i for i,symbol in enumerate(self.terms) if isinstance(symbol, int)]
+        pos = [i for i, symbol in enumerate(self.terms) if isinstance(symbol, int)]
         return tuple(pos)
 
     @property
@@ -111,12 +115,12 @@ class Atom(object):
         return set(const)
 
     def match_variable(self, target):
-        '''
+        """
         :param target: ground atom to be matched
         :return: dictionary from int to string, indicating the map from variable to constant. return empty
         dictionary if the two cannot match.
-        '''
-        assert self.predicate == target.predicate, str(self.predicate)+" and "+str(target.predicate)+" can not match"
+        """
+        assert self.predicate == target.predicate, str(self.predicate) + " and " + str(target.predicate) + " can not match"
         match = {}
         for i in range(self.arity):
             if isinstance(self.terms[i], str):
@@ -129,12 +133,12 @@ class Atom(object):
         return match
 
     def replace_terms(self, match):
-        '''
+        """
         :param match: match dictionary
         :return: a atoms whose variable is replaced by constants, given the match mapping.
-        '''
+        """
         terms = []
-        for i,variable in enumerate(self.terms):
+        for i, variable in enumerate(self.terms):
             if variable not in match:
                 terms.append(variable)
             else:
@@ -143,7 +147,7 @@ class Atom(object):
         return result
 
     def replace_predicate(self, predicate_dict):
-        for k,v in predicate_dict.items():
+        for k, v in predicate_dict.items():
             if k == self.predicate:
                 return Atom(v, self.terms)
         return self
@@ -152,7 +156,7 @@ class Atom(object):
         symbols = []
         for symbol in self.terms:
             if isinstance(symbol, int):
-                symbols.append(symbol-id)
+                symbols.append(symbol - id)
             else:
                 symbols.append(symbol)
         return Atom(self.predicate, symbols)
@@ -161,35 +165,35 @@ class Atom(object):
         var_map = {}
         for symbol in self.terms:
             if isinstance(symbol, int):
-                var_map[symbol] = start+symbol
+                var_map[symbol] = start + symbol
         return self.replace_terms(var_map)
 
 
 class Clause():
     def __init__(self, head, body):
-        '''
+        """
         :param head: atom, result of a clause
         :param body: list of atoms, conditions, amximum length is 2.
-        '''
+        """
         self.head = head
         self.body = body
 
     def __str__(self):
         body_str = ""
-        min_varible = min(self.variables)
-        new_head = self.head.normalized_atom(min_varible)
-        new_body = [body_atom.normalized_atom(min_varible) for body_atom in self.body]
+        min_variable = min(self.variables)
+        new_head = self.head.normalized_atom(min_variable)
+        new_body = [body_atom.normalized_atom(min_variable) for body_atom in self.body]
         for body_atom in new_body:
             body_str += str(body_atom)
             body_str += ","
         body_str = body_str[:-1]
-        return str(new_head)+":-"+body_str
+        return str(new_head) + ":-" + body_str
 
     def replace_by_head(self, head):
-        '''
+        """
         :param head: a ground atom
         :return: replaced clause
-        '''
+        """
         match = self.head.match_variable(head)
         new_body = []
         for atom in self.body:
@@ -201,7 +205,6 @@ class Clause():
         new_body = [atom.replace_predicate(predicates_dict) for atom in self.body]
         return Clause(new_head, new_body)
 
-
     def replace_by_dict(self, match):
         head = self.head.replace_terms(match)
         body = [atom.replace_terms(match) for atom in self.body]
@@ -209,7 +212,7 @@ class Clause():
 
     @property
     def atoms(self):
-        return [self.head]+list(self.body)
+        return [self.head] + list(self.body)
 
     @property
     def variables(self):
@@ -240,4 +243,3 @@ class Clause():
         head = self.head.assign_var_id(start)
         body = [atom.assign_var_id(start) for atom in self.body]
         return Clause(head, body)
-

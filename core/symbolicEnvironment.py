@@ -4,16 +4,17 @@ from core.ilp import LanguageFrame
 import copy
 from random import choice, random
 import numpy as np
+import string
 
 
 class SymbolicEnvironment(object):
     def __init__(self, background, initial_state, actions):
-        '''
+        """
         :param language_frame
         :param background: list of atoms, the background knowledge
         :param positive: list of atoms, positive instances
         :param negative: list of atoms, negative instances
-        '''
+        """
         self.background = background
         self._state = copy.deepcopy(initial_state)
         self.initial_state = copy.deepcopy(initial_state)
@@ -27,21 +28,23 @@ class SymbolicEnvironment(object):
         self._state = copy.deepcopy(self.initial_state)
 
 
-UP = Predicate("up",0)
-DOWN = Predicate("down",0)
-LEFT = Predicate("left",0)
-RIGHT = Predicate("right",0)
-LESS = Predicate("less",2)
-ZERO = Predicate("zero",1)
-LAST = Predicate("last",1)
-CLIFF = Predicate("cliff",2)
-SUCC = Predicate("succ",2)
-GOAL = Predicate("goal",2)
+UP = Predicate("up", 0)
+DOWN = Predicate("down", 0)
+LEFT = Predicate("left", 0)
+RIGHT = Predicate("right", 0)
+LESS = Predicate("less", 2)
+ZERO = Predicate("zero", 1)
+LAST = Predicate("last", 1)
+CLIFF = Predicate("cliff", 2)
+SUCC = Predicate("succ", 2)
+GOAL = Predicate("goal", 2)
 CURRENT = Predicate("current", 2)
 
+
 class CliffWalking(SymbolicEnvironment):
-    all_variations = ("top left","top right", "center", "6 by 6", "7 by 7")
-    nn_variations = ("top left","top right", "center")
+    all_variations = ("top left", "top right", "center", "6 by 6", "7 by 7")
+    nn_variations = ("top left", "top right", "center")
+
     def __init__(self, initial_state=("0", "0"), width=5):
         actions = [UP, DOWN, LEFT, RIGHT]
         self.language = LanguageFrame(actions, extensional=[ZERO, SUCC, CURRENT, LAST],
@@ -51,18 +54,18 @@ class CliffWalking(SymbolicEnvironment):
         self.unseen_background.extend([Atom(CLIFF, [str(x), "0"]) for x in range(1, width - 1)])
         self.unseen_background.append(Atom(GOAL, [str(width - 1), "0"]))
         background.append(Atom(LAST, [str(width - 1)]))
-        #background.extend([Atom(CLIFF, [str(x), "0"]) for x in range(1, WIDTH-1)])
-        #background.extend([Atom(LESS, [str(i), str(j)]) for i in range(0, width)
+        # background.extend([Atom(CLIFF, [str(x), "0"]) for x in range(1, WIDTH-1)])
+        # background.extend([Atom(LESS, [str(i), str(j)]) for i in range(0, width)
         #                   for j in range(0, width) if i < j])
-        background.extend([Atom(SUCC, [str(i), str(i+1)]) for i in range(width - 1)])
+        background.extend([Atom(SUCC, [str(i), str(i + 1)]) for i in range(width - 1)])
         background.append(Atom(ZERO, ["0"]))
-        #background.extend([Atom(CLIFF, ["1", str(y)]) for y in range(2, WIDTH)])
-        #background.extend([Atom(CLIFF, ["3", str(y)]) for y in range(1, WIDTH-1)])
+        # background.extend([Atom(CLIFF, ["1", str(y)]) for y in range(2, WIDTH)])
+        # background.extend([Atom(CLIFF, ["3", str(y)]) for y in range(1, WIDTH-1)])
         super(CliffWalking, self).__init__(background, initial_state, actions)
         self.max_step = 50
         self.state_dim = 2
         self.all_actions = actions
-        self.width=width
+        self.width = width
 
     @property
     def all_states(self):
@@ -95,19 +98,19 @@ class CliffWalking(SymbolicEnvironment):
     def next_step(self, action):
         x = int(self._state[0])
         y = int(self._state[1])
-        self.step+=1
+        self.step += 1
         reward, finished = self.get_reward()
         self.acc_reward += reward
         if isinstance(action, Atom):
             action = action.predicate
-        if action == UP and y<self.width-1:
-            self._state = (str(x), str(y+1))
-        elif action == DOWN and y>0:
-            self._state = (str(x), str(y-1))
-        elif action == LEFT and x>0:
-            self._state = (str(x-1), str(y))
-        elif action == RIGHT and x<self.width-1:
-            self._state = (str(x+1), str(y))
+        if action == UP and y < self.width - 1:
+            self._state = (str(x), str(y + 1))
+        elif action == DOWN and y > 0:
+            self._state = (str(x), str(y - 1))
+        elif action == LEFT and x > 0:
+            self._state = (str(x - 1), str(y))
+        elif action == RIGHT and x < self.width - 1:
+            self._state = (str(x + 1), str(y))
         return reward, finished
 
     def get_reward(self):
@@ -115,27 +118,27 @@ class CliffWalking(SymbolicEnvironment):
         :param action: action atom
         :return: reward value, and whether an episode is finished
         """
-        for atom in self.background+self.unseen_background:
+        for atom in self.background + self.unseen_background:
             if atom.predicate == GOAL and tuple(atom.terms) == self._state:
                 return 1.0, True
             elif atom.predicate == CLIFF and tuple(atom.terms) == self._state:
                 return -1.0, True
-            elif self.step>=self.max_step:
+            elif self.step >= self.max_step:
                 return -0.0, True
         return -0.02, False
 
     def vary(self, type):
         width = self.width
         initial_state = ("0", "0")
-        if type=="top left":
-            initial_state=(0, width-1)
-        elif type=="top right":
-            initial_state=(width-1, width-1)
-        elif type=="center":
-            initial_state=(width//2, width//2)
-        elif type=="6 by 6":
+        if type == "top left":
+            initial_state = (0, width - 1)
+        elif type == "top right":
+            initial_state = (width - 1, width - 1)
+        elif type == "center":
+            initial_state = (width // 2, width // 2)
+        elif type == "6 by 6":
             width = 6
-        elif type=="7 by 7":
+        elif type == "7 by 7":
             width = 7
         else:
             raise ValueError
@@ -146,7 +149,7 @@ class WindyCliffWalking(CliffWalking):
     def next_step(self, action):
         x = int(self._state[0])
         y = int(self._state[1])
-        self.step+=1
+        self.step += 1
         reward, finished = self.get_reward()
         self.acc_reward += reward
 
@@ -154,14 +157,14 @@ class WindyCliffWalking(CliffWalking):
             action = action.predicate
         if random() < 0.1:
             action = DOWN
-        if action == UP and y<self.width-1:
-            self._state = (str(x), str(y+1))
-        elif action == DOWN and y>0:
-            self._state = (str(x), str(y-1))
-        elif action == LEFT and x>0:
-            self._state = (str(x-1), str(y))
-        elif action == RIGHT and x<self.width-1:
-            self._state = (str(x+1), str(y))
+        if action == UP and y < self.width - 1:
+            self._state = (str(x), str(y + 1))
+        elif action == DOWN and y > 0:
+            self._state = (str(x), str(y - 1))
+        elif action == LEFT and x > 0:
+            self._state = (str(x - 1), str(y))
+        elif action == RIGHT and x < self.width - 1:
+            self._state = (str(x + 1), str(y))
         return reward, finished
 
 
@@ -175,26 +178,27 @@ BLOCK = Predicate("block", 1)
 CLEAR = Predicate("clear", 1)
 MAX_WIDTH = 7
 
-import string
+
 class BlockWorld(SymbolicEnvironment):
     """
     state is represented as a list of lists
     """
+
     def __init__(self, initial_state=INI_STATE, additional_predicates=(), background=(), block_n=4, all_block=False):
         actions = [MOVE]
         self.max_step = 50
-        self._block_encoding = {"a":1, "b": 2, "c":3, "d":4, "e": 5, "f":6, "g":7}
-        self.state_dim = MAX_WIDTH**3
+        self._block_encoding = {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6, "g": 7}
+        self.state_dim = MAX_WIDTH ** 3
         if all_block:
-            self._all_blocks = list(string.ascii_lowercase)[:MAX_WIDTH]+["floor"]
+            self._all_blocks = list(string.ascii_lowercase)[:MAX_WIDTH] + ["floor"]
         else:
-            self._all_blocks = list(string.ascii_lowercase)[:block_n]+["floor"]
-        self.language = LanguageFrame(actions, extensional=[ON,FLOOR, TOP]+list(additional_predicates),
+            self._all_blocks = list(string.ascii_lowercase)[:block_n] + ["floor"]
+        self.language = LanguageFrame(actions, extensional=[ON, FLOOR, TOP] + list(additional_predicates),
                                       constants=self._all_blocks)
         self._additional_predicates = additional_predicates
         background = list(background)
         background.append(Atom(FLOOR, ["floor"]))
-        #background.extend([Atom(BLOCK, [b]) for b in list(string.ascii_lowercase)[:block_n]])
+        # background.extend([Atom(BLOCK, [b]) for b in list(string.ascii_lowercase)[:block_n]])
         super(BlockWorld, self).__init__(background, initial_state, actions)
         self._block_n = block_n
 
@@ -215,13 +219,13 @@ class BlockWorld(SymbolicEnvironment):
         :return:
         """
 
-        self.step+=1
+        self.step += 1
         reward, finished = self.get_reward()
         self.acc_reward += reward
 
         self.clean_empty_stack()
         block1, block2 = action.terms
-        if finished and reward<1:
+        if finished and reward < 1:
             self._state = [[]]
             return reward, finished
         for stack1 in self._state:
@@ -233,7 +237,7 @@ class BlockWorld(SymbolicEnvironment):
                         return reward, finished
         if block2 == "floor":
             for stack1 in self._state:
-                if stack1[-1] == block1 and len(stack1)>1:
+                if stack1[-1] == block1 and len(stack1) > 1:
                     del stack1[-1]
                     self._state.append([block1])
                     return reward, finished
@@ -241,33 +245,35 @@ class BlockWorld(SymbolicEnvironment):
 
     @property
     def action_n(self):
-        return (self._block_n+1)**2
+        return (self._block_n + 1) ** 2
 
     def state2vector(self, state):
         matrix = np.zeros([MAX_WIDTH, MAX_WIDTH, MAX_WIDTH])
         for i, stack in enumerate(state):
             for j, block in enumerate(stack):
-                matrix[i][j][self._block_encoding[block]-1] = 1.0
+                matrix[i][j][self._block_encoding[block] - 1] = 1.0
         return matrix.flatten()
 
     def state2atoms(self, state):
         atoms = set()
         for stack in state:
-            if len(stack)>0:
+            if len(stack) > 0:
                 atoms.add(Atom(ON, [stack[0], "floor"]))
                 atoms.add(Atom(TOP, [stack[-1]]))
-            for i in range(len(stack)-1):
-                atoms.add(Atom(ON, [stack[i+1], stack[i]]))
+            for i in range(len(stack) - 1):
+                atoms.add(Atom(ON, [stack[i + 1], stack[i]]))
         return atoms
 
     def get_reward(self):
         pass
 
+
 class Unstack(BlockWorld):
-    all_variations = ("swap top 2","2 columns", "5 blocks",
+    all_variations = ("swap top 2", "2 columns", "5 blocks",
                       "6 blocks", "7 blocks")
 
-    nn_variations = ("swap top 2","2 columns", "5 blocks", "6 blocks", "7 blocks")
+    nn_variations = ("swap top 2", "2 columns", "5 blocks", "6 blocks", "7 blocks")
+
     def get_reward(self):
         if self.step >= self.max_step:
             return -0.0, True
@@ -278,18 +284,18 @@ class Unstack(BlockWorld):
 
     def vary(self, type):
         block_n = self._block_n
-        if type=="swap top 2":
-            initial_state=[["a", "b", "d", "c"]]
-        elif type=="2 columns":
-            initial_state=[["b", "a"], ["c", "d"]]
-        elif type=="5 blocks":
-            initial_state=[["a", "b", "c", "d", "e"]]
+        if type == "swap top 2":
+            initial_state = [["a", "b", "d", "c"]]
+        elif type == "2 columns":
+            initial_state = [["b", "a"], ["c", "d"]]
+        elif type == "5 blocks":
+            initial_state = [["a", "b", "c", "d", "e"]]
             block_n = 5
-        elif type=="6 blocks":
-            initial_state=[["a", "b", "c", "d", "e", "f"]]
+        elif type == "6 blocks":
+            initial_state = [["a", "b", "c", "d", "e", "f"]]
             block_n = 6
-        elif type=="7 blocks":
-            initial_state=[["a", "b", "c", "d", "e", "f", "g"]]
+        elif type == "7 blocks":
+            initial_state = [["a", "b", "c", "d", "e", "f", "g"]]
             block_n = 7
         else:
             raise ValueError
@@ -297,9 +303,9 @@ class Unstack(BlockWorld):
 
 
 class Stack(BlockWorld):
-    all_variations = ("swap right 2","2 columns", "5 blocks",
+    all_variations = ("swap right 2", "2 columns", "5 blocks",
                       "6 blocks", "7 blocks")
-    nn_variations = ("swap right 2","2 columns", "5 blocks", "6 blocks", "7 blocks")
+    nn_variations = ("swap right 2", "2 columns", "5 blocks", "6 blocks", "7 blocks")
 
     def get_reward(self):
         if self.step >= self.max_step:
@@ -311,18 +317,18 @@ class Stack(BlockWorld):
 
     def vary(self, type):
         block_n = self._block_n
-        if type=="swap right 2":
-            initial_state=[["a"], ["b"], ["d"], ["c"]]
-        elif type=="2 columns":
-            initial_state=[["b", "a"], ["c", "d"]]
-        elif type=="5 blocks":
-            initial_state=[["a"], ["b"], ["c"], ["d"], ["e"]]
+        if type == "swap right 2":
+            initial_state = [["a"], ["b"], ["d"], ["c"]]
+        elif type == "2 columns":
+            initial_state = [["b", "a"], ["c", "d"]]
+        elif type == "5 blocks":
+            initial_state = [["a"], ["b"], ["c"], ["d"], ["e"]]
             block_n = 5
-        elif type=="6 blocks":
-            initial_state=[["a"], ["b"], ["c"], ["d"], ["e"], ["f"]]
+        elif type == "6 blocks":
+            initial_state = [["a"], ["b"], ["c"], ["d"], ["e"], ["f"]]
             block_n = 6
-        elif type=="7 blocks":
-            initial_state=[["a"], ["b"], ["c"], ["d"], ["e"], ["f"], ["g"]]
+        elif type == "7 blocks":
+            initial_state = [["a"], ["b"], ["c"], ["d"], ["e"], ["f"], ["g"]]
             block_n = 7
         else:
             raise ValueError
@@ -330,10 +336,13 @@ class Stack(BlockWorld):
 
 
 GOAL_ON = Predicate("goal_on", 2)
+
+
 class On(BlockWorld):
-    all_variations = ("swap top 2","swap middle 2", "5 blocks",
+    all_variations = ("swap top 2", "swap middle 2", "5 blocks",
                       "6 blocks", "7 blocks")
-    nn_variations = ("swap top 2","swap middle 2")
+    nn_variations = ("swap top 2", "swap middle 2")
+
     def __init__(self, initial_state=INI_STATE, goal_state=Atom(GOAL_ON, ["a", "b"]), block_n=4, all_block=False):
         super(On, self).__init__(initial_state, additional_predicates=[GOAL_ON],
                                  background=[goal_state], block_n=block_n, all_block=all_block)
@@ -348,18 +357,18 @@ class On(BlockWorld):
 
     def vary(self, type):
         block_n = self._block_n
-        if type=="swap top 2":
-            initial_state=[["a", "b", "d", "c"]]
-        elif type=="swap middle 2":
-            initial_state=[["a", "c", "b", "d"]]
-        elif type=="5 blocks":
-            initial_state=[["a", "b", "c", "d", "e"]]
+        if type == "swap top 2":
+            initial_state = [["a", "b", "d", "c"]]
+        elif type == "swap middle 2":
+            initial_state = [["a", "c", "b", "d"]]
+        elif type == "5 blocks":
+            initial_state = [["a", "b", "c", "d", "e"]]
             block_n = 5
-        elif type=="6 blocks":
-            initial_state=[["a", "b", "c", "d", "e", "f"]]
+        elif type == "6 blocks":
+            initial_state = [["a", "b", "c", "d", "e", "f"]]
             block_n = 6
-        elif type=="7 blocks":
-            initial_state=[["a", "b", "c", "d", "e", "f", "g"]]
+        elif type == "7 blocks":
+            initial_state = [["a", "b", "c", "d", "e", "f", "g"]]
             block_n = 7
         else:
             raise ValueError
@@ -381,29 +390,33 @@ PLACE = Predicate("place", 2)
 MINE = Predicate("mine", 2)
 EMPTY = Predicate("empty", 2)
 OPPONENT = Predicate("opponent", 2)
+
+
 class TicTacTeo(SymbolicEnvironment):
     all_variations = ("")
+
     def __init__(self, width=3, know_valid_pos=True):
         actions = [PLACE]
         self.language = LanguageFrame(actions, extensional=[ZERO, MINE, EMPTY, OPPONENT, SUCC],
                                       constants=[str(i) for i in range(width)])
         background = []
-        #background.extend([Atom(LESS, [str(i), str(j)]) for i in range(0, WIDTH)
+        # background.extend([Atom(LESS, [str(i), str(j)]) for i in range(0, WIDTH)
         #                   for j in range(0, WIDTH) if i < j])
         background.extend([Atom(SUCC, [str(i), str(i + 1)]) for i in range(width - 1)])
         background.append(Atom(ZERO, ["0"]))
         self.max_step = 50
-        initial_state = np.zeros([3,3])
+        initial_state = np.zeros([3, 3])
         super(TicTacTeo, self).__init__(background, initial_state, actions)
         self.width = width
         self.all_positions = [(i, j) for i in range(width) for j in range(width)]
         self.know_valid_pos = know_valid_pos
         self.action_n = len(self.all_positions)
-        self.state_dim = width**2
+        self.state_dim = width ** 2
 
     def next_step(self, action):
         def tuple2int(t):
             return (int(t[0]), int(t[1]))
+
         self.step += 1
         reward, finished = self.get_reward()
         if finished:
@@ -415,7 +428,7 @@ class TicTacTeo(SymbolicEnvironment):
         return reward, finished
 
     def get_valid(self):
-        return [(x,y) for x,y in self.all_positions if self._state[x,y]==0]
+        return [(x, y) for x, y in self.all_positions if self._state[x, y] == 0]
 
     @property
     def all_actions(self):
@@ -426,8 +439,10 @@ class TicTacTeo(SymbolicEnvironment):
 
     def state2atoms(self, state):
         atoms = set()
+
         def tuple2strings(t):
             return str(t[0]), str(t[1])
+
         for position in self.all_positions:
             if state[position] == 0:
                 atoms.add(Atom(EMPTY, tuple2strings(position)))
@@ -454,17 +469,16 @@ class TicTacTeo(SymbolicEnvironment):
                 self._state[position] = -1
 
     def get_reward(self):
-        if np.any(np.sum(self._state, axis=0)==3) or np.any(np.sum(self._state, axis=1)==3):
+        if np.any(np.sum(self._state, axis=0) == 3) or np.any(np.sum(self._state, axis=1) == 3):
             return 1, True
         for i in range(-self.width, self.width):
-            if np.trace(self._state, i)==3 or np.trace(np.flip(self._state, 0),i)==3:
+            if np.trace(self._state, i) == 3 or np.trace(np.flip(self._state, 0), i) == 3:
                 return 1, True
-        if np.any(np.sum(self._state, axis=0)==-3) or np.any(np.sum(self._state, axis=1)==-3):
+        if np.any(np.sum(self._state, axis=0) == -3) or np.any(np.sum(self._state, axis=1) == -3):
             return -1, True
         for i in range(-self.width, self.width):
-            if np.trace(self._state, i)==-3 or np.trace(np.flip(self._state, 0),i)==-3:
+            if np.trace(self._state, i) == -3 or np.trace(np.flip(self._state, 0), i) == -3:
                 return -1, True
         if not self.get_valid():
             return 0, True
         return 0, False
-

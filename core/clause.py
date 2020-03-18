@@ -1,5 +1,4 @@
 from __future__ import print_function, division, absolute_import
-import numpy as np
 from collections import namedtuple
 
 Predicate = namedtuple("Predicate", "name arity")
@@ -169,7 +168,7 @@ class Atom(object):
         return self.replace_terms(var_map)
 
 
-class Clause():
+class Clause:
     def __init__(self, head, body):
         """
         :param head: atom, result of a clause
